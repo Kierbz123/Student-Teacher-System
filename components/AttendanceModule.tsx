@@ -46,6 +46,7 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
   };
 
   const exportToCSV = () => {
+    // Generate headers for ALL recorded dates
     const dateHeaders = allSessionKeys.map(k => k.split('|')[0]);
     const headers = ['Student Name', 'ID', 'Block', ...dateHeaders];
     
@@ -123,7 +124,7 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] ml-1">Time Slot</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] ml-1">Class Time Slot</label>
               <select 
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
@@ -133,7 +134,7 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] ml-1">Section</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] ml-1">Student Block</label>
               <select 
                 value={filterBlock}
                 onChange={(e) => setFilterBlock(e.target.value)}
@@ -149,26 +150,30 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead className="bg-slate-100 border-b-2 border-slate-200">
                   <tr>
-                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest sticky left-0 bg-slate-100 z-10 w-72 shadow-md border-r-2 border-slate-200">Student Name</th>
-                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest">ID</th>
-                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest text-center w-52">Mark</th>
-                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest">Recent</th>
+                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest sticky left-0 bg-slate-100 z-10 w-72 shadow-md border-r-2 border-slate-200">Student Full Name</th>
+                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest">School ID</th>
+                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest text-center w-52">Mark Attendance</th>
+                    <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest">Recent Record</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-slate-50">
                   {filteredStudents.map(s => {
                     const fullName = `${s.firstName} ${s.lastName}`;
                     const status = currentEntries[s.id] || 'Present';
+                    
                     return (
                       <tr key={s.id} className="hover:bg-slate-50 transition-all">
-                        <td className="p-6 font-black text-slate-950 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-md border-r-2 border-slate-100">{fullName}</td>
+                        <td className="p-6 font-black text-slate-950 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-md border-r-2 border-slate-100">
+                          {fullName}
+                        </td>
                         <td className="p-6 text-sm text-slate-900 font-black tracking-tight">{s.studentId}</td>
-                        <td className="p-6 text-center">
+                        <td className="p-6">
                           <div className="flex items-center justify-center gap-2 bg-slate-200 p-2 rounded-2xl border-2 border-slate-200 shadow-inner">
                             {['Present', 'Absent', 'Late'].map(opt => (
                               <button
                                 key={opt}
                                 onClick={() => handleStatusChange(s.id, opt as any)}
+                                title={opt}
                                 className={`w-11 h-11 rounded-xl text-xs font-black transition-all transform active:scale-90 flex items-center justify-center border-2 ${status === opt ? (opt === 'Present' ? 'bg-green-600' : opt === 'Absent' ? 'bg-red-600' : 'bg-yellow-600') + ' border-white text-white shadow-xl scale-110' : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300'}`}
                               >
                                 {opt[0]}
@@ -179,7 +184,15 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
                         <td className="p-6">
                           <div className="flex gap-2">
                             {s.attendance.slice(-5).map((rec, i) => (
-                              <div key={i} className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black text-white shadow-md border-2 border-white/20 ${rec.status === 'Present' ? 'bg-green-500' : rec.status === 'Absent' ? 'bg-red-500' : 'bg-yellow-500'}`}>{rec.status[0]}</div>
+                              <div 
+                                key={i} 
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black text-white shadow-md border-2 border-white/20 ${
+                                  rec.status === 'Present' ? 'bg-green-500' :
+                                  rec.status === 'Absent' ? 'bg-red-500' : 'bg-yellow-500'
+                                }`}
+                              >
+                                {rec.status[0]}
+                              </div>
                             ))}
                           </div>
                         </td>
@@ -193,58 +206,80 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ students, onSave })
 
           <div className="flex justify-end items-center gap-10 bg-slate-900 p-12 rounded-[3rem] shadow-2xl border border-white/10">
             <div className="text-right">
-              <p className="text-[11px] font-black text-blue-400 uppercase tracking-[0.3em] mb-2">Live Session</p>
+              <p className="text-[11px] font-black text-blue-400 uppercase tracking-[0.3em] mb-2">Live Session Monitor</p>
               <div className="flex gap-6 text-white font-black">
-                <p><span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span> {Object.values(currentEntries).filter(v => v === 'Present').length} P</p>
-                <p><span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span> {Object.values(currentEntries).filter(v => v === 'Absent').length} A</p>
-                <p><span className="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span> {Object.values(currentEntries).filter(v => v === 'Late').length} L</p>
+                <p className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-500"></span> {Object.values(currentEntries).filter(v => v === 'Present').length} P</p>
+                <p className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500"></span> {Object.values(currentEntries).filter(v => v === 'Absent').length} A</p>
+                <p className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500"></span> {Object.values(currentEntries).filter(v => v === 'Late').length} L</p>
               </div>
             </div>
-            <button onClick={handleSave} className="bg-blue-600 text-white px-16 py-5 rounded-[1.5rem] font-black text-base uppercase tracking-widest shadow-[0_0_50px_rgba(37,99,235,0.5)] hover:bg-blue-500 hover:scale-[1.03] transition-all border border-blue-400/50">Save Record</button>
+            <button 
+              onClick={handleSave}
+              className="bg-blue-600 text-white px-16 py-5 rounded-[1.5rem] font-black text-base uppercase tracking-widest shadow-[0_0_50px_rgba(37,99,235,0.5)] hover:bg-blue-500 hover:scale-[1.03] transition-all active:scale-95 border border-blue-400/50"
+            >
+              Finalize Class Record
+            </button>
           </div>
         </>
       ) : (
         <div className="bg-white rounded-[3rem] border-2 border-slate-100 shadow-2xl overflow-hidden flex flex-col h-[75vh]">
           <div className="p-10 border-b-2 border-slate-100 bg-slate-50 flex justify-between items-center">
-             <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Academic Matrix</h3>
-             <div className="flex items-center gap-5 font-black text-[11px] uppercase">
-                <span className="flex items-center gap-2"><span className="w-4 h-4 rounded-lg bg-green-500"></span> Present</span>
-                <span className="flex items-center gap-2"><span className="w-4 h-4 rounded-lg bg-red-500"></span> Absent</span>
-                <span className="flex items-center gap-2"><span className="w-4 h-4 rounded-lg bg-yellow-500"></span> Late</span>
+             <div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Class Register Matrix</h3>
+                <p className="text-base text-slate-700 font-bold opacity-80">Full academic history for section {filterBlock}</p>
+             </div>
+             <div className="flex items-center gap-5">
+                <span className="flex items-center gap-2 text-[11px] font-black text-slate-800"><span className="w-3.5 h-3.5 rounded-full bg-green-500 shadow-sm"></span> Present</span>
+                <span className="flex items-center gap-2 text-[11px] font-black text-slate-800"><span className="w-3.5 h-3.5 rounded-full bg-red-500 shadow-sm"></span> Absent</span>
+                <span className="flex items-center gap-2 text-[11px] font-black text-slate-800"><span className="w-3.5 h-3.5 rounded-full bg-yellow-500 shadow-sm"></span> Late</span>
              </div>
           </div>
           <div className="overflow-auto flex-1 custom-scrollbar">
              <table className="w-full text-left border-collapse table-fixed">
                 <thead className="bg-slate-100 border-b-2 border-slate-200 sticky top-0 z-20">
                    <tr>
-                      <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest sticky left-0 bg-slate-100 z-30 w-72 shadow-xl border-r-2 border-slate-200">Student Name</th>
-                      {allSessionKeys.map(key => (
-                          <th key={key} className="p-6 text-[10px] font-black text-slate-700 uppercase text-center min-w-[110px] border-r-2 border-slate-200">
-                             <span className="block text-slate-950 font-black">{key.split('|')[0]}</span>
-                             <span className="block text-[8px] text-slate-500 mt-1.5 opacity-70">{key.split('|')[1]}</span>
+                      <th className="p-6 text-[11px] font-black text-slate-700 uppercase tracking-widest sticky left-0 bg-slate-100 z-30 w-72 shadow-xl border-r-2 border-slate-200">Full Name</th>
+                      {allSessionKeys.map(key => {
+                        const [d, t] = key.split('|');
+                        return (
+                          <th key={key} className="p-6 text-[10px] font-black text-slate-700 uppercase tracking-tighter text-center min-w-[110px] border-r-2 border-slate-200">
+                             <span className="block text-slate-900 font-black">{d}</span>
+                             <span className="block text-[8px] text-slate-500 mt-1.5 opacity-70">{t !== 'N/A' ? t : 'Session'}</span>
                           </th>
-                      ))}
+                        );
+                      })}
+                      {allSessionKeys.length === 0 && <th className="p-10 text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">No Records Found</th>}
                    </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-slate-100">
-                   {filteredStudents.map(s => (
-                        <tr key={s.id} className="hover:bg-slate-50 transition-all">
-                           <td className="p-6 font-black text-slate-900 text-sm sticky left-0 bg-white z-10 shadow-lg border-r-2 border-slate-100 truncate">{s.firstName} {s.lastName}</td>
+                   {filteredStudents.map(s => {
+                      const fullName = `${s.firstName} ${s.lastName}`;
+                      return (
+                        <tr key={s.id} className="hover:bg-slate-50 transition-all duration-150">
+                           <td className="p-6 font-black text-slate-900 text-sm sticky left-0 bg-white z-10 shadow-lg border-r-2 border-slate-100 truncate">
+                              {fullName}
+                           </td>
                            {allSessionKeys.map(key => {
                              const [d, t] = key.split('|');
                              const record = s.attendance.find(a => a.date === d && (a.time === t || (t === 'N/A' && !a.time)));
                              return (
                                <td key={key} className="p-6 text-center border-r-2 border-slate-100">
                                   {record ? (
-                                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-xs font-black text-white shadow-lg ${record.status === 'Present' ? 'bg-green-600' : record.status === 'Absent' ? 'bg-red-600' : 'bg-yellow-600'}`}>
+                                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-xs font-black text-white shadow-lg transform hover:scale-110 transition-transform ${
+                                      record.status === 'Present' ? 'bg-green-600' :
+                                      record.status === 'Absent' ? 'bg-red-600' : 'bg-yellow-600'
+                                    }`}>
                                        {record.status[0]}
                                     </span>
-                                  ) : <span className="text-slate-300 font-black opacity-30">—</span>}
+                                  ) : (
+                                    <span className="text-slate-300 font-black text-lg opacity-30">—</span>
+                                  )}
                                </td>
                              );
                            })}
                         </tr>
-                   ))}
+                      );
+                   })}
                 </tbody>
              </table>
           </div>

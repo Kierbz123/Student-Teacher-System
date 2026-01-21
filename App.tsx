@@ -72,6 +72,7 @@ const App: React.FC = () => {
     });
     
     if (newNotifications.length > 0) {
+      // Use Set to avoid duplicate simple strings
       setNotifications(prev => [...new Set([...prev, ...newNotifications])]);
     }
   };
@@ -212,7 +213,7 @@ const App: React.FC = () => {
               <div key={i} className="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-500/50 animate-in slide-in-from-right-4">
                 <div className="flex justify-between items-center gap-4">
                    <p className="text-sm font-bold flex items-center gap-2"><span className="text-xl">🔔</span> {msg}</p>
-                   <button onClick={() => setNotifications(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-white">✕</button>
+                   <button onClick={() => setNotifications(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-white font-black">✕</button>
                 </div>
               </div>
             ))}
@@ -221,20 +222,21 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
+      {/* FIXED QUICK ACTION FAB */}
       <div className="fixed bottom-10 right-10 z-50">
         {showFabMenu && (
-          <div className="absolute bottom-full right-0 mb-4 flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <div className="absolute bottom-full right-0 mb-4 flex flex-col gap-3 items-end animate-in fade-in slide-in-from-bottom-2">
             <button 
               onClick={() => { setIsImportModalOpen(true); setShowFabMenu(false); }}
-              className="bg-white text-slate-950 px-6 py-3 rounded-xl shadow-2xl text-xs font-black uppercase tracking-widest border-2 border-slate-100 hover:bg-slate-50 transition-all"
+              className="bg-white text-slate-950 px-8 py-4 rounded-[1.25rem] shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-slate-100 hover:bg-slate-50 transition-all"
             >
-              Bulk Import
+              Bulk Import CSV
             </button>
             <button 
               onClick={() => { setIsAddModalOpen(true); setShowFabMenu(false); }}
-              className="bg-white text-slate-950 px-6 py-3 rounded-xl shadow-2xl text-xs font-black uppercase tracking-widest border-2 border-slate-100 hover:bg-slate-50 transition-all"
+              className="bg-white text-slate-950 px-8 py-4 rounded-[1.25rem] shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-slate-100 hover:bg-slate-50 transition-all"
             >
-              Add Student
+              Register Student
             </button>
           </div>
         )}

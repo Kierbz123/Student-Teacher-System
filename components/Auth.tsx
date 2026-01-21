@@ -8,7 +8,7 @@ interface AuthProps {
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
+  const [role, setRole] = useState<UserRole>(UserRole.TEACHER); // Default to Teacher for easier demo
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -18,7 +18,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     gender: 'Male',
     birthday: '',
     email: '',
-    contact: ''
+    contact: '',
+    password: ''
   });
 
   const age = useMemo(() => {
@@ -35,24 +36,20 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { firstName, lastName, id } = formData;
+    const { firstName, lastName, id, password } = formData;
     
     if (isLogin) {
-      if (!firstName || !lastName || !id) return alert('Please fill in your name and ID to login');
+      if (!id || !password) return alert('Please enter your School ID and Password to login');
+      // In a real app, we'd verify the password here. For this MVP, we proceed.
     } else {
-      if (Object.values(formData).some(v => v === '')) {
-        if (role === UserRole.STUDENT || role === UserRole.TEACHER) {
-            if (!formData.firstName || !formData.lastName || !formData.id || !formData.birthday) {
-                return alert('Please fill in all required fields');
-            }
-        }
+      if (!firstName || !lastName || !id || !password) {
+        return alert('Please fill in all required fields including password');
       }
     }
     
     onLogin({ ...formData, role });
   };
 
-  // Replaced dark input background with solid white and thick borders for maximum visibility
   const inputClass = "w-full bg-white border-2 border-slate-300 rounded-2xl px-5 py-4 text-slate-950 focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all placeholder:text-slate-500 text-base font-black shadow-lg";
   const labelClass = "text-[11px] font-black text-white uppercase tracking-[0.2em] px-1 block mb-2 drop-shadow-md";
 
@@ -68,7 +65,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex bg-slate-950/40 p-2 rounded-2xl border border-white/10 shadow-2xl">
             <button
               type="button"
@@ -87,56 +84,84 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
 
           <div className={`grid gap-6 ${isLogin ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-            <div className="space-y-5">
-              <div>
-                <label className={labelClass}>First Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className={inputClass}
-                  placeholder="Juan"
-                />
-              </div>
-              {!isLogin && (
-                <div>
-                  <label className={labelClass}>Middle Name</label>
-                  <input
-                    type="text"
-                    value={formData.middleName}
-                    onChange={(e) => setFormData({...formData, middleName: e.target.value})}
-                    className={inputClass}
-                    placeholder="Miguel"
-                  />
-                </div>
+            <div className="space-y-4">
+              {isLogin ? (
+                <>
+                  <div>
+                    <label className={labelClass}>School ID No.</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.id}
+                      onChange={(e) => setFormData({...formData, id: e.target.value})}
+                      className={inputClass}
+                      placeholder="2021-XXXXX"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className={inputClass}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className={labelClass}>First Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      className={inputClass}
+                      placeholder="Juan"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Last Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      className={inputClass}
+                      placeholder="Dela Cruz"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>School ID No.</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.id}
+                      onChange={(e) => setFormData({...formData, id: e.target.value})}
+                      className={inputClass}
+                      placeholder="2021-XXXXX"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Create Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className={inputClass}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </>
               )}
-              <div>
-                <label className={labelClass}>Last Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className={inputClass}
-                  placeholder="Dela Cruz"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>School ID No.</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.id}
-                  onChange={(e) => setFormData({...formData, id: e.target.value})}
-                  className={inputClass}
-                  placeholder="2021-XXXXX"
-                />
-              </div>
             </div>
 
             {!isLogin && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Gender</label>
@@ -151,7 +176,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Birthdate {age !== null && <span className="text-blue-300">({age}y)</span>}</label>
+                    <label className={labelClass}>Birthdate</label>
                     <input
                       type="date"
                       required
@@ -189,7 +214,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-[1.5rem] shadow-[0_20px_50px_rgba(37,99,235,0.6)] transition-all transform active:scale-[0.97] border-t-2 border-white/20 uppercase tracking-[0.3em] text-sm"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-[1.5rem] shadow-[0_20px_50px_rgba(37,99,235,0.6)] transition-all transform active:scale-[0.97] border-t-2 border-white/20 uppercase tracking-[0.3em] text-sm mt-4"
           >
             {isLogin ? 'Access Portal' : 'Finalize Registration'}
           </button>

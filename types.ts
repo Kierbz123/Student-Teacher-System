@@ -21,6 +21,7 @@ export interface User {
   birthday: string;
   email: string;
   contact: string;
+  password?: string; // For security during deletion and login
 }
 
 export interface Assessment {

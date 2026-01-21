@@ -33,10 +33,11 @@ const App: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
+  const [notifications, setNotifications] = useState<string[]>([]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
-    checkNotifications();
+    checkUpcomingInterventions();
   }, [students]);
 
   useEffect(() => {
@@ -47,9 +48,10 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Check for upcoming interventions (notifications)
-  const checkNotifications = () => {
+  const checkUpcomingInterventions = () => {
     const now = new Date();
+    const newNotifications: string[] = [];
+    
     students.forEach(s => {
       s.interventionLogs.forEach(log => {
         if (log.scheduledDate) {
@@ -58,11 +60,18 @@ const App: React.FC = () => {
           const diffHrs = diffMs / (1000 * 60 * 60);
           
           if (diffHrs > 0 && diffHrs <= 1) {
-             console.log(`Notification: 1hr alert for ${s.firstName} ${s.lastName}`);
+             newNotifications.push(`Upcoming (1h): Meeting with ${s.firstName} ${s.lastName} at ${sched.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`);
+          }
+          else if (diffHrs > 23 && diffHrs <= 25) {
+             newNotifications.push(`Tomorrow: Follow-up with ${s.firstName} ${s.lastName}`);
           }
         }
       });
     });
+    
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...new Set([...prev, ...newNotifications])]);
+    }
   };
 
   const handleLogout = () => {
@@ -87,18 +96,36 @@ const App: React.FC = () => {
     const fullStudent: Student = {
       ...newStudent,
       id: Math.random().toString(36).substr(2, 9),
-      assessments: [], attendance: [], interventionLogs: [],
-      failureProbability: 0, riskLevel: RiskLevel.LOW
+      assessments: [],
+      attendance: [],
+      interventionLogs: [],
+      failureProbability: 0,
+      riskLevel: RiskLevel.LOW
     };
     updateStudentState([...students, fullStudent]);
     setIsAddModalOpen(false);
+  };
+
+  const handleDeleteStudent = (id: string) => {
+    if (confirm('DANGER: Are you sure you want to permanently delete this student record?')) {
+      const password = prompt('SECURITY CHECK: Please enter your password to confirm deletion:');
+      if (password === currentUser?.password) {
+        updateStudentState(students.filter(s => s.id !== id));
+        if (selectedStudent?.id === id) setSelectedStudent(null);
+        alert('Record deleted successfully.');
+      } else {
+        alert('Error: Incorrect password. Action aborted.');
+      }
+    }
   };
 
   const handleAddIntervention = (studentId: string, log: Omit<InterventionLog, 'id' | 'date'>) => {
     const updated = students.map(s => {
       if (s.id === studentId) {
         const newLog: InterventionLog = {
-          ...log, id: Math.random().toString(36).substr(2, 9), date: new Date().toISOString()
+          ...log,
+          id: Math.random().toString(36).substr(2, 9),
+          date: new Date().toISOString()
         };
         return { ...s, interventionLogs: [...(s.interventionLogs || []), newLog] };
       }
@@ -122,7 +149,11 @@ const App: React.FC = () => {
   const handleSaveGrades = (assessmentInfo: Omit<Assessment, 'id' | 'score'>, scores: Record<string, number>) => {
     const updated = students.map(s => {
       if (scores[s.id] !== undefined) {
-        const newAssessment: Assessment = { ...assessmentInfo, id: Math.random().toString(36).substr(2, 9), score: scores[s.id] };
+        const newAssessment: Assessment = {
+          ...assessmentInfo,
+          id: Math.random().toString(36).substr(2, 9),
+          score: scores[s.id]
+        };
         return { ...s, assessments: [...(s.assessments || []), newAssessment] };
       }
       return s;
@@ -130,7 +161,9 @@ const App: React.FC = () => {
     updateStudentState(updated);
   };
 
-  if (!currentUser) return <Auth onLogin={setCurrentUser} />;
+  if (!currentUser) {
+    return <Auth onLogin={setCurrentUser} />;
+  }
 
   if (currentUser.role === UserRole.STUDENT) {
     const studentData = students.find(s => s.studentId === currentUser.id) || null;
@@ -138,29 +171,76 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
-    if (selectedStudent) return <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} onAddIntervention={log => handleAddIntervention(selectedStudent.id, log)} />;
+    if (selectedStudent) {
+      return (
+        <StudentDetails 
+          student={selectedStudent} 
+          onBack={() => setSelectedStudent(null)} 
+          onAddIntervention={(log) => handleAddIntervention(selectedStudent.id, log)}
+        />
+      );
+    }
 
     switch (activeTab) {
-      case 'dashboard': return <Dashboard students={students} onNavigate={setActiveTab} />;
-      case 'students': return <StudentList students={students} onSelectStudent={setSelectedStudent} onDeleteStudent={id => updateStudentState(students.filter(s => s.id !== id))} onOpenAdd={() => setIsAddModalOpen(true)} />;
-      case 'attendance': return <AttendanceModule students={students} onSave={handleSaveAttendance} />;
-      case 'grades': return <GradesModule students={students} onSave={handleSaveGrades} />;
-      case 'alerts': return <AlertCenter students={students} onSelectStudent={setSelectedStudent} />;
-      default: return <Dashboard students={students} onNavigate={setActiveTab} />;
+      case 'dashboard':
+        return <Dashboard students={students} onNavigate={setActiveTab} />;
+      case 'students':
+        return <StudentList 
+          students={students} 
+          onSelectStudent={setSelectedStudent} 
+          onDeleteStudent={handleDeleteStudent}
+          onOpenAdd={() => setIsAddModalOpen(true)}
+        />;
+      case 'attendance':
+        return <AttendanceModule students={students} onSave={handleSaveAttendance} />;
+      case 'grades':
+        return <GradesModule students={students} onSave={handleSaveGrades} />;
+      case 'alerts':
+        return <AlertCenter students={students} onSelectStudent={setSelectedStudent} />;
+      default:
+        return <Dashboard students={students} onNavigate={setActiveTab} />;
     }
   };
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar activeTab={activeTab} setActiveTab={tab => { setActiveTab(tab); setSelectedStudent(null); }} onLogout={handleLogout} />
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">{renderContent()}</main>
+      <Sidebar activeTab={activeTab} setActiveTab={(tab) => {
+        setActiveTab(tab);
+        setSelectedStudent(null);
+      }} onLogout={handleLogout} />
+      
+      <main className="flex-1 ml-64 p-8 overflow-y-auto relative">
+        {notifications.length > 0 && (
+          <div className="fixed top-6 right-6 z-[60] flex flex-col gap-3">
+            {notifications.map((msg, i) => (
+              <div key={i} className="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-500/50 animate-in slide-in-from-right-4">
+                <div className="flex justify-between items-center gap-4">
+                   <p className="text-sm font-bold flex items-center gap-2">🔔 {msg}</p>
+                   <button onClick={() => setNotifications(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-white font-black">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {renderContent()}
+      </main>
 
-      <div className="fixed bottom-10 right-10 z-40">
+      <div className="fixed bottom-10 right-10 z-50">
         {showFabMenu && (
-           <div className="flex flex-col gap-4 mb-4 items-end animate-in fade-in slide-in-from-bottom-2">
-              <button onClick={() => { setIsImportModalOpen(true); setShowFabMenu(false); }} className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-slate-50">Bulk Import</button>
-              <button onClick={() => { setIsAddModalOpen(true); setShowFabMenu(false); }} className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-slate-50">Manual Add</button>
-           </div>
+          <div className="absolute bottom-full right-0 mb-4 flex flex-col gap-3 items-end animate-in fade-in slide-in-from-bottom-2">
+            <button 
+              onClick={() => { setIsImportModalOpen(true); setShowFabMenu(false); }}
+              className="bg-white text-slate-950 px-8 py-4 rounded-[1.25rem] shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-slate-100 hover:bg-slate-50 transition-all"
+            >
+              Bulk Import (Excel/CSV)
+            </button>
+            <button 
+              onClick={() => { setIsAddModalOpen(true); setShowFabMenu(false); }}
+              className="bg-white text-slate-950 px-8 py-4 rounded-[1.25rem] shadow-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-slate-100 hover:bg-slate-50 transition-all"
+            >
+              Manual Register
+            </button>
+          </div>
         )}
         <button 
           onClick={() => setShowFabMenu(!showFabMenu)}
@@ -171,7 +251,7 @@ const App: React.FC = () => {
       </div>
 
       {isAddModalOpen && <AddStudentModal onClose={() => setIsAddModalOpen(false)} onAdd={handleAddStudent} />}
-      {isImportModalOpen && <BulkImportModal onClose={() => setIsImportModalOpen(false)} onImport={s => { updateStudentState([...students, ...s]); setIsImportModalOpen(false); }} />}
+      {isImportModalOpen && <BulkImportModal onClose={() => setIsImportModalOpen(false)} onImport={(s) => { updateStudentState([...students, ...s]); setIsImportModalOpen(false); }} />}
     </div>
   );
 };

@@ -19,6 +19,7 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
   const blocks = ['All', ...Array.from(new Set(students.map(s => s.block)))];
   const filteredStudents = students.filter(s => filterBlock === 'All' || s.block === filterBlock);
 
+  // Group assessments from all students to create a unique history list
   const assessmentHistory = useMemo(() => {
     const sessions: Record<string, { name: string, type: string, max: number, date: string, avg: number, count: number }> = {};
     students.forEach(s => {
@@ -47,7 +48,7 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
       <header className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Academic Records</h2>
-          <p className="text-slate-600 text-sm font-medium">Manage student scores or review historical performance.</p>
+          <p className="text-slate-600 text-sm font-medium">Input scores for current tasks or review past results.</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -70,7 +71,7 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
           <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-200 shadow-xl grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-1">
               <label className={labelClass}>Assessment Name</label>
-              <input type="text" className={inputClass} placeholder="e.g. Midterms" value={assessmentName} onChange={e => setAssessmentName(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="e.g. Midterm Quiz 1" value={assessmentName} onChange={e => setAssessmentName(e.target.value)} />
             </div>
             <div className="space-y-1">
               <label className={labelClass}>Category</label>
@@ -79,11 +80,11 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
               </select>
             </div>
             <div className="space-y-1">
-              <label className={labelClass}>Max Points</label>
+              <label className={labelClass}>Max Possible Score</label>
               <input type="number" className={inputClass} value={maxScore} onChange={e => setMaxScore(parseInt(e.target.value))} />
             </div>
             <div className="space-y-1">
-              <label className={labelClass}>Class Block</label>
+              <label className={labelClass}>Filter Block</label>
               <select className={inputClass} value={filterBlock} onChange={e => setFilterBlock(e.target.value)}>
                 {blocks.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
@@ -94,9 +95,9 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
             <table className="w-full text-left">
               <thead className="bg-slate-100 border-b-2 border-slate-200">
                 <tr>
-                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Student</th>
-                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">Current AVG</th>
-                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-right">Score Input</th>
+                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Student Information</th>
+                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">Class AVG</th>
+                  <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-right">Raw Score</th>
                 </tr>
               </thead>
               <tbody className="divide-y-2 divide-slate-50">
@@ -115,6 +116,7 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
                         <div className="flex items-center justify-end gap-3">
                           <input 
                             type="number"
+                            placeholder="0"
                             className="w-24 px-4 py-2 rounded-xl border-2 border-slate-300 text-right font-black text-slate-950 bg-white shadow-sm focus:border-blue-600 outline-none"
                             value={scores[s.id] || ''}
                             onChange={(e) => handleScoreChange(s.id, e.target.value)}
@@ -129,7 +131,17 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
             </table>
           </div>
           <div className="flex justify-end p-4">
-            <button onClick={() => { if(!assessmentName) return alert('Name assessment'); onSave({type, name: assessmentName, maxScore, date}, scores); setAssessmentName(''); setScores({}); }} className="bg-blue-600 text-white px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl hover:bg-blue-700 transition-all">Save Session</button>
+            <button 
+              onClick={() => { 
+                if(!assessmentName) return alert('Please enter assessment name.'); 
+                onSave({type, name: assessmentName, maxScore, date}, scores); 
+                setAssessmentName(''); 
+                setScores({}); 
+              }} 
+              className="bg-blue-600 text-white px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl hover:bg-blue-700 transition-all active:scale-95"
+            >
+              Finalize Assessment Session
+            </button>
           </div>
         </>
       ) : (
@@ -137,10 +149,11 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
           <table className="w-full text-left">
             <thead className="bg-slate-100 border-b-2 border-slate-200">
               <tr>
-                <th className="p-6 text-[11px] font-black text-slate-600 uppercase">Assessment</th>
-                <th className="p-6 text-[11px] font-black text-slate-600 uppercase">Type</th>
-                <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-center">Class AVG</th>
-                <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-right">Max</th>
+                <th className="p-6 text-[11px] font-black text-slate-600 uppercase">Assessment Name</th>
+                <th className="p-6 text-[11px] font-black text-slate-600 uppercase">Category</th>
+                <th className="p-6 text-[11px] font-black text-slate-600 uppercase">Recorded Date</th>
+                <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-center">Class Performance</th>
+                <th className="p-6 text-[11px] font-black text-slate-600 uppercase text-right">Max Pts</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-slate-50">
@@ -148,10 +161,16 @@ const GradesModule: React.FC<GradesModuleProps> = ({ students, onSave }) => {
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="p-6 font-black text-slate-900">{item.name}</td>
                   <td className="p-6"><span className="bg-slate-200 px-3 py-1 rounded-lg text-[10px] font-black uppercase">{item.type}</span></td>
+                  <td className="p-6 text-sm text-slate-700 font-black">{item.date}</td>
                   <td className="p-6 text-center font-black text-blue-600">{(item.avg / item.count).toFixed(1)}%</td>
                   <td className="p-6 text-right font-black text-slate-400">{item.max}</td>
                 </tr>
               ))}
+              {assessmentHistory.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-20 text-center font-black uppercase text-slate-300 tracking-[0.3em]">No Historical Data Found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
