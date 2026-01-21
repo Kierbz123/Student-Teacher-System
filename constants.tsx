@@ -15,6 +15,9 @@ export const MOCK_STUDENTS: Student[] = [
     birthday: '2002-05-15',
     email: 'juan.delacruz@university.edu.ph',
     contact: '09171234567',
+    // Added missing hierarchical info to fix TS error
+    university: 'University of the Philippines',
+    college: 'College of Engineering',
     course: 'BS Information Technology',
     yearLevel: 3,
     block: 'IT3-A',

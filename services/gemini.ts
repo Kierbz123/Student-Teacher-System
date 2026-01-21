@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Student } from "../types";
+import { Student, RiskLevel } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -29,6 +29,30 @@ export const getInterventionAdvice = async (student: Student) => {
   }
 };
 
+export const getCommunicationTemplate = async (student: Student, channel: 'SMS' | 'Email') => {
+  const fullName = `${student.firstName} ${student.lastName}`;
+  const riskTier = student.riskLevel === RiskLevel.HIGH ? "Red (Tier 3)" : student.riskLevel === RiskLevel.MODERATE ? "Yellow (Tier 2)" : "Early Warning (Tier 1)";
+  
+  const prompt = `
+    Create a ${channel} template for a parent in a Philippine school context.
+    Student: ${fullName}. Risk: ${riskTier}.
+    Language: Professional English with a polite, helpful Filipino tone.
+    Subject: Student Performance Update.
+    The message should be supportive but clear about the academic concern.
+    Length: Short.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    return `Dear Parent, this is regarding ${fullName}'s current performance. We would like to schedule a consultation to discuss support strategies. Thank you.`;
+  }
+};
+
 export const getClassOverviewSummary = async (students: Student[]) => {
   const stats = {
     total: students.length,
@@ -38,7 +62,7 @@ export const getClassOverviewSummary = async (students: Student[]) => {
 
   const prompt = `
     Class stats: ${stats.total} total, ${stats.highRisk} High Risk, ${stats.modRisk} Mid Risk.
-    Provide a one-sentence tactical summary. Very short.
+    Provide a one-sentence tactical summary for the teacher.
   `;
 
   try {

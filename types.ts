@@ -1,9 +1,9 @@
 
 export enum RiskLevel {
   LOW = 'LOW',
-  EARLY_WARNING = 'EARLY_WARNING',
-  MODERATE = 'MODERATE',
-  HIGH = 'HIGH'
+  EARLY_WARNING = 'EARLY_WARNING', // Tier 1 (51-65%)
+  MODERATE = 'MODERATE',      // Tier 2 (66-79%)
+  HIGH = 'HIGH'               // Tier 3 (80%+)
 }
 
 export enum UserRole {
@@ -21,7 +21,7 @@ export interface User {
   birthday: string;
   email: string;
   contact: string;
-  password?: string; // For security during deletion and login
+  password?: string;
 }
 
 export interface Assessment {
@@ -35,15 +35,15 @@ export interface Assessment {
 
 export interface AttendanceRecord {
   date: string;
-  time?: string; // e.g., "08:00 AM - 10:00 AM"
+  time?: string;
   status: 'Present' | 'Absent' | 'Late';
   reason?: string;
 }
 
 export interface InterventionLog {
   id: string;
-  date: string; // When the log was created
-  scheduledDate?: string; // Future meeting date/time
+  date: string;
+  scheduledDate?: string;
   type: string;
   notes: string;
 }
@@ -58,13 +58,26 @@ export interface Student {
   birthday: string;
   email: string;
   contact: string;
+  // Hierarchical Info
+  university: string;
+  college: string;
   course: string;
   yearLevel: number;
   block: string;
+  // Guardian Info
+  guardianName?: string;
+  guardianContact?: string;
+  guardianRelation?: string;
+  
   subjects: string[];
   assessments: Assessment[];
   attendance: AttendanceRecord[];
   interventionLogs: InterventionLog[];
   failureProbability: number;
   riskLevel: RiskLevel;
+  riskFlags?: {
+    slipping: boolean;
+    suddenDrop: boolean;
+    chronicAbsentee: boolean;
+  };
 }

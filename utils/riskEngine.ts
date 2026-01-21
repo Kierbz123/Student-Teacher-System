@@ -2,25 +2,41 @@
 import { Student, Assessment, AttendanceRecord, RiskLevel } from '../types';
 import { PASSING_THRESHOLD, ATTENDANCE_LIMIT } from '../constants';
 
-export const calculateStudentRisk = (student: Student): { probability: number; level: RiskLevel } => {
-  // 1. Grade Analysis (60% weight)
+export const calculateStudentRisk = (student: Student): { probability: number; level: RiskLevel; flags: Student['riskFlags'] } => {
   let gradeFactor = 0;
+  let slipping = false;
+  let suddenDrop = false;
+  let chronicAbsentee = false;
+
+  // 1. Grade Analysis (60% weight)
   if (student.assessments.length > 0) {
-    const totalScore = student.assessments.reduce((sum, a) => sum + (a.score / a.maxScore), 0);
-    const avgScore = totalScore / student.assessments.length;
+    const scores = student.assessments.map(a => a.score / a.maxScore);
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
     
-    // Calculate distance from passing threshold
+    // Base grade factor: distance from passing
     if (avgScore < PASSING_THRESHOLD) {
       gradeFactor = Math.min(1, (PASSING_THRESHOLD - avgScore) / PASSING_THRESHOLD * 2);
-    } else {
-      gradeFactor = 0;
     }
 
-    // Trend analysis: if last score is significantly lower than average
-    const lastAssessment = student.assessments[student.assessments.length - 1];
-    const lastScoreRatio = lastAssessment.score / lastAssessment.maxScore;
-    if (lastScoreRatio < avgScore - 0.15) {
-      gradeFactor = Math.min(1, gradeFactor + 0.2);
+    // Trend Analysis (Last 5)
+    if (scores.length >= 2) {
+      const last = scores[scores.length - 1];
+      const prev = scores[scores.length - 2];
+      
+      // Sudden Drop Check
+      if (prev - last > 0.20) {
+        suddenDrop = true;
+        gradeFactor = Math.min(1, gradeFactor + 0.3);
+      }
+
+      // Slipping Check (Last 3 descending)
+      if (scores.length >= 3) {
+        const last3 = scores.slice(-3);
+        if (last3[0] > last3[1] && last3[1] > last3[2]) {
+          slipping = true;
+          gradeFactor = Math.min(1, gradeFactor + 0.15);
+        }
+      }
     }
   }
 
@@ -31,13 +47,19 @@ export const calculateStudentRisk = (student: Student): { probability: number; l
     const absences = student.attendance.filter(a => a.status === 'Absent').length;
     const lates = student.attendance.filter(a => a.status === 'Late').length;
     
-    const effectiveAbsences = absences + (lates * 0.33);
-    const absenceRate = effectiveAbsences / totalDays;
+    const effectiveAbsenceRate = (absences + (lates * 0.33)) / totalDays;
     
-    if (absenceRate > ATTENDANCE_LIMIT) {
-      attendanceFactor = Math.min(1, absenceRate / ATTENDANCE_LIMIT);
-    } else if (absenceRate > ATTENDANCE_LIMIT / 2) {
-      attendanceFactor = 0.5;
+    if (effectiveAbsenceRate > ATTENDANCE_LIMIT) {
+      chronicAbsentee = true;
+      attendanceFactor = Math.min(1, effectiveAbsenceRate / ATTENDANCE_LIMIT);
+    } else if (effectiveAbsenceRate > ATTENDANCE_LIMIT / 2) {
+      attendanceFactor = 0.4;
+    }
+
+    // Pattern Detection: Consecutive Absences
+    const last3Attendance = student.attendance.slice(-3);
+    if (last3Attendance.length === 3 && last3Attendance.every(a => a.status === 'Absent')) {
+      attendanceFactor = Math.min(1, attendanceFactor + 0.2);
     }
   }
 
@@ -48,5 +70,9 @@ export const calculateStudentRisk = (student: Student): { probability: number; l
   else if (riskScore >= 0.66) level = RiskLevel.MODERATE;
   else if (riskScore >= 0.51) level = RiskLevel.EARLY_WARNING;
 
-  return { probability: riskScore, level };
+  return { 
+    probability: riskScore, 
+    level, 
+    flags: { slipping, suddenDrop, chronicAbsentee } 
+  };
 };

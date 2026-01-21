@@ -9,6 +9,7 @@ import GradesModule from './components/GradesModule';
 import AlertCenter from './components/AlertCenter';
 import AddStudentModal from './components/AddStudentModal';
 import BulkImportModal from './components/BulkImportModal';
+import DatabaseManager from './components/DatabaseManager';
 import Auth from './components/Auth';
 import StudentPortal from './components/StudentPortal';
 import { MOCK_STUDENTS } from './constants';
@@ -89,6 +90,22 @@ const App: React.FC = () => {
     if (selectedStudent) {
       const updatedSelected = recalculated.find(s => s.id === selectedStudent.id);
       if (updatedSelected) setSelectedStudent(updatedSelected);
+    }
+  };
+
+  const handleImportSystemData = (newData: Student[]) => {
+    updateStudentState(newData);
+    alert('System Database successfully updated from backup.');
+  };
+
+  const handleResetSystem = () => {
+    const password = prompt('DANGER: To confirm master system reset, please enter your password:');
+    if (password === currentUser?.password) {
+      setStudents(MOCK_STUDENTS);
+      alert('System has been reset to default mock state.');
+      setActiveTab('dashboard');
+    } else {
+      alert('Unauthorized. Reset aborted.');
     }
   };
 
@@ -197,6 +214,8 @@ const App: React.FC = () => {
         return <GradesModule students={students} onSave={handleSaveGrades} />;
       case 'alerts':
         return <AlertCenter students={students} onSelectStudent={setSelectedStudent} />;
+      case 'database':
+        return <DatabaseManager students={students} onImport={handleImportSystemData} onReset={handleResetSystem} />;
       default:
         return <Dashboard students={students} onNavigate={setActiveTab} />;
     }

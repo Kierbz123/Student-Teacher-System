@@ -31,6 +31,9 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose, onImport }) 
           firstName,
           middleName,
           lastName,
+          // Added missing hierarchical info defaults to fix TS error
+          university: 'University of the Philippines',
+          college: 'College of Engineering',
           gender: 'Other',
           birthday: '2000-01-01',
           studentId: studentId || `ID-${Math.random().toString(36).substr(2, 5)}`,
@@ -101,7 +104,7 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose, onImport }) 
           </div>
 
           <textarea 
-            className="w-full h-48 p-5 font-mono text-sm border-2 border-slate-200 rounded-2xl bg-slate-50 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+            className="w-full h-48 p-5 font-mono text-sm border-2 border-slate-200 rounded-2xl bg-slate-50 focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400"
             placeholder="FullName, StudentID, Course, YearLevel, Block&#10;Juan Dela Cruz, 2021-00001, BS IT, 3, IT3-A"
             value={csvText}
             onChange={e => setCsvText(e.target.value)}
